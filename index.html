@@ -92,3 +92,73 @@
       id="product-list"
       class="bg-white shadow-md rounded px-8 pt-6 pb-8"
     ></div>
+    <!-- JavaScript -->
+    <script>
+        const products = [];
+        function saveToLocalStorage(key, data) {
+          localStorage.setItem(key, JSON.stringify(data));
+        }
+        function loadFromLocalStorage(key) {
+          const data = localStorage.getItem(key);
+          return data ? JSON.parse(data) : [];
+        }
+        function addProduct(productData) {
+          products.push(productData);
+          saveToLocalStorage("products", products);
+          renderProducts();
+        }
+        function updateStock(productId, quantity) {
+          const product = products.find((p) => p.id === productId);
+          if (product) {
+            product.inStock += quantity;
+            product.totalSales += quantity > 0 ? 0 : -quantity;
+            saveToLocalStorage("products", products);
+            renderProducts();
+          }
+        }
+        function checkLowStock() {
+          return products.filter((product) => product.inStock < product.minStock);
+        }
+        function generateSalesReport() {
+          const totalSales = products.reduce(
+            (sum, product) => sum + product.totalSales * product.price,
+            0
+          );
+          alert(`ยอดขายทั้งหมด: ${totalSales} บาท`);
+        }
+        function renderProducts() {
+          const productList = document.getElementById("product-list");
+          productList.innerHTML = "";
+          products.forEach((product) => {
+            const div = document.createElement("div");
+            div.className = "py-2 border-b last:border-none";
+            div.innerHTML = ` ${product.name} - ราคา: ${product.price} บาท - คงเหลือ: ${product.inStock} - หมวดหมู่: ${product.category} <button onclick="updateStock('${product.id}', -1)" class="text-red-500 ml-4">ขาย 1 ชิ้น</button> `;
+            productList.appendChild(div);
+          });
+        }
+        document.addEventListener("DOMContentLoaded", () => {
+          const storedProducts = loadFromLocalStorage("products");
+          storedProducts.forEach((product) => products.push(product));
+          renderProducts();
+        });
+        document
+          .getElementById("product-form")
+          .addEventListener("submit", (event) => {
+            event.preventDefault();
+            const name = document.getElementById("name").value;
+            const price = parseFloat(document.getElementById("price").value);
+            const inStock = parseInt(document.getElementById("inStock").value);
+            const category = document.getElementById("category").value;
+            const minStock = parseInt(document.getElementById("minStock").value);
+            const productData = {
+              id: Date.now().toString(),
+              name,
+              price,
+              inStock,
+              category,
+              minStock,
+              totalSales: 0,
+            };
+            addProduct(productData);
+            event.target.reset();
+          });
